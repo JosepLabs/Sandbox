@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Flagess</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="dark">
+
+<header>
+  <div class="brand">
+    <span class="brand-emoji" aria-hidden="true">🏳️</span>
+    <h1>Flagess</h1>
+  </div>
+  <div class="header-actions">
+    <button class="icon-btn" id="back-btn" title="Menú" aria-label="Menú" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 5 L8 12 L15 19"/></svg>
+    </button>
+    <button class="icon-btn" id="settings-btn" title="Configuración" aria-label="Configuración">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.5-2.4 1a7.4 7.4 0 0 0-1.7-1L14.9 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.5L6.4 11a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.5 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.9h4l.4-2.9a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.5Z"/></svg>
+    </button>
+    <button class="icon-btn" id="help-btn" title="Ayuda" aria-label="Ayuda">?</button>
+  </div>
+</header>
+
+<main>
+
+  <!--  VISTA: MENÚ PRINCIPAL  -->
+  <section id="view-menu" class="view">
+    <div class="menu-intro">
+      <h2 id="menu-title"></h2>
+      <p id="menu-tagline"></p>
+    </div>
+    <div class="mode-grid" id="mode-grid"></div>
+  </section>
+
+  <!--  VISTA: ÁREA DE JUEGO  -->
+  <section id="view-game" class="view hidden">
+    <div class="flag-stage" id="flag-stage">
+      <canvas id="color-canvas" width="300" height="200"></canvas>
+      <img id="flag-img" src="" alt="" />
+      <div class="grid-overlay hidden" id="grid-overlay"></div>
+      <div class="attempts-pill" id="attempts-pill"></div>
+    </div>
+
+    <div class="reveal-banner" id="reveal-banner"></div>
+
+    <div class="search-wrap">
+      <div class="search-row">
+        <input id="country-input" type="text" autocomplete="off" />
+        <button id="guess-btn" disabled></button>
+      </div>
+      <div class="dropdown" id="dropdown"></div>
+    </div>
+
+    <div class="guesses" id="guesses"></div>
+  </section>
+
+</main>
+
+<div class="modal-overlay" id="help-overlay">
+  <div class="modal">
+    <button class="close" id="help-close" aria-label="Cerrar">✕</button>
+    <h2 id="help-title"></h2>
+    <p id="help-body1"></p>
+    <p id="help-body-mode"></p>
+    <p id="help-body2"></p>
+    <p id="help-body3"></p>
+    <div class="modal-actions">
+      <button class="primary" id="help-ok"></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="settings-overlay">
+  <div class="modal">
+    <button class="close" id="settings-close" aria-label="Cerrar">✕</button>
+    <h2 id="settings-title"></h2>
+
+    <div class="settings-group">
+      <h3 id="label-mode"></h3>
+      <div class="option-row" id="mode-options"></div>
+    </div>
+
+    <div class="settings-group">
+      <h3 id="label-theme"></h3>
+      <div class="option-row" id="theme-options"></div>
+    </div>
+
+    <div class="settings-group">
+      <h3 id="label-language"></h3>
+      <div class="option-row" id="language-options"></div>
+    </div>
+
+    <div class="settings-group">
+      <h3 id="label-other"></h3>
+      <div class="toggle-row">
+        <span id="label-reduce-motion"></span>
+        <label class="switch">
+          <input type="checkbox" id="reduce-motion-toggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
