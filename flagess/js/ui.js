@@ -86,8 +86,6 @@ function cacheEls() {
     settingsOverlay: document.getElementById("settings-overlay"),
     settingsClose: document.getElementById("settings-close"),
     settingsTitle: document.getElementById("settings-title"),
-    labelMode: document.getElementById("label-mode"),
-    modeOptions: document.getElementById("mode-options"),
     labelTheme: document.getElementById("label-theme"),
     themeOptions: document.getElementById("theme-options"),
     labelLanguage: document.getElementById("label-language"),
@@ -239,15 +237,17 @@ function renderGuessRow(g) {
   const target = Game.getState().target;
   const prox = Math.max(0, Math.min(100, Math.round((1 - g.dist / maxDistance()) * 100)));
   const barColor = prox > 80 ? "var(--gold)" : prox > 45 ? "var(--amber)" : "var(--coral)";
-  const primary = entityLabel(g);
-  const showSub = currentGuessType() === "capital";
+  const primary =
+    currentGuessType() === "capital"
+      ? `${countryName(g, lang)} — ${countryCapital(g, lang)}`
+      : entityLabel(g);
 
   const row = document.createElement("div");
   row.className = "guess-row" + (g.isCorrect ? " correct" : "");
   row.innerHTML = `
     <img class="gflag" src="${flagThumbUrl(g.code, 80)}" alt="${primary}">
-    <div>
-      <div class="gname">${primary}${showSub ? `<span class="gsub">${countryName(g, lang)}</span>` : ""}</div>
+    <div class="gtext">
+      <div class="gname">${primary}</div>
       <div class="proxbar"><span style="width:${g.isCorrect ? 100 : prox}%;background:${g.isCorrect ? "var(--gold)" : barColor}"></span></div>
     </div>
     <span class="gcontinent ${g.isCorrect || g.contMatch ? "match" : "nomatch"}">${t().continents[g.continent]}</span>
@@ -413,10 +413,6 @@ function bindSettingsEvents() {
 function renderOptionRows() {
   const state = Game.getState();
 
-  els.modeOptions.innerHTML = Game.MODES.map(
-    (mode) => `<button class="option-btn ${state.modeId === mode.id ? "active" : ""}" data-val="${mode.id}">${t()[mode.titleKey]}</button>`
-  ).join("");
-
   els.themeOptions.innerHTML = `
     <button class="option-btn ${theme === "dark" ? "active" : ""}" data-val="dark">${t().themeDark}</button>
     <button class="option-btn ${theme === "light" ? "active" : ""}" data-val="light">${t().themeLight}</button>
@@ -426,15 +422,6 @@ function renderOptionRows() {
     <button class="option-btn ${lang === "en" ? "active" : ""}" data-val="en">English</button>
   `;
 
-  els.modeOptions.querySelectorAll("button").forEach((b) =>
-    b.addEventListener("click", () => {
-      if (Game.getState().modeId === b.dataset.val) return;
-      Game.setMode(b.dataset.val);
-      renderOptionRows();
-      applyText();
-      startNewGame();
-    })
-  );
   els.themeOptions.querySelectorAll("button").forEach((b) =>
     b.addEventListener("click", () => {
       if (theme === b.dataset.val) return;
@@ -478,7 +465,6 @@ function applyText() {
   els.helpOk.textContent = t().understood;
 
   els.settingsTitle.textContent = t().settingsTitle;
-  els.labelMode.textContent = t().groupMode;
   els.labelTheme.textContent = t().groupTheme;
   els.labelLanguage.textContent = t().groupLanguage;
   els.labelOther.textContent = t().groupOther;

@@ -59,11 +59,30 @@ function pickTarget() {
   return COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)];
 }
 
+/**
+ * Deja el "stage" en un estado neutro antes de que el modo activo lo
+ * configure. Es necesario porque los elementos del stage (canvas de
+ * colores, cuadrícula...) se comparten entre todos los modos: si un modo
+ * los deja visibles/poblados, sin este reset seguirían ahí encima al
+ * cambiar a otro modo (p. ej. los bloques de Cuadrícula tapando el canvas
+ * de Colores). Cada mode.setupStage() se encarga de volver a mostrar y
+ * rellenar solo lo que necesita.
+ */
+function resetSharedStage() {
+  const { colorCanvas, gridOverlay } = els;
+  if (colorCanvas) colorCanvas.classList.add("hidden");
+  if (gridOverlay) {
+    gridOverlay.classList.add("hidden");
+    gridOverlay.innerHTML = "";
+  }
+}
+
 /** Empieza una partida nueva con el modo actualmente seleccionado. */
 export function newGame() {
   target = pickTarget();
   guesses = [];
   finished = false;
+  resetSharedStage();
   getMode(modeId).setupStage(ctx());
   return getState();
 }
