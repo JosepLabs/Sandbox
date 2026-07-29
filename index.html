@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Jordle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --ink: #111111;
+    --muted: #666666;
+    --line: #d2d0c5;
+    --accent: #e53935;
+    --card-bg: #ffffff;
+    --radius: 4px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0d1117;
+    --ink: #f0f6fc;
+    --muted: #8b949e;
+    --line: #30363d;
+    --accent: #ff5252;
+    --card-bg: #161b22;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: background .3s, color .3s;
+  }
+
+  header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--line);
+  }
+  .theme-toggle {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    transition: border-color .2s;
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+
+  main {
+    flex: 1;
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 48px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin: 0 0 12px 0;
+  }
+  .hero p {
+    color: var(--muted);
+    font-size: 1.05rem;
+    margin: 0;
+    max-width: 500px;
+  }
+
+  .games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .game-card {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-decoration: none;
+    color: var(--ink);
+    position: relative;
+    transition: transform .2s, border-color .2s;
+  }
+
+  .game-card:not(.coming-soon):hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+  }
+
+  .game-card.coming-soon {
+    opacity: 0.6;
+    cursor: default;
+    background: transparent;
+    border-style: dashed;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
+  .game-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+
+  .status-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(229, 57, 53, 0.1);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .coming-soon .status-badge {
+    background: var(--line);
+    color: var(--muted);
+  }
+
+  .game-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.01em;
+  }
+
+  .game-desc {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  .card-footer {
+    margin-top: 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .coming-soon .card-footer {
+    color: var(--muted);
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+  <header>
+    <button class="theme-toggle" id="theme-btn">MODO</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Selecciona un juego.</h1>
+      <p>Retos para todo tipo de temas</p>
+    </section>
+
+    <div class="games-grid">
+      <a href="flagess.html" class="game-card">
+        <div>
+          <div class="card-header">
+            <span class="game-tag">Modos Múltiples</span>
+            <span class="status-badge">Disponible</span>
+          </div>
+          <h2 class="game-title">Flagess</h2>
+          <p class="game-desc">Adivina el país mediante zoom, revelación de colores por coincidencia de píxeles, cuadrícula y capitales.</p>
+        </div>
+        <div class="card-footer">
+          Jugar ahora →
+        </div>
+      </a>
+
+      <div class="game-card coming-soon">
+        <div>
+          <div class="card-header">
+            <span class="game-tag">Modos Múltiples</span>
+            <span class="status-badge">Próximamente</span>
+          </div>
+          <h2 class="game-title">Pokédle</h2>
+          <p class="game-desc">Un wordle pero de pokemon</p>
+        </div>
+        <div class="card-footer">
+          En desarrollo
+        </div>
+      </div>
+    </div>
+  </main>
+
+<script>
+  const btn = document.getElementById('theme-btn');
+  const body = document.body;
+  
+  btn.addEventListener('click', () => {
+    const current = body.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    body.setAttribute('data-theme', next);
+    btn.textContent = next.toUpperCase();
+  });
+  btn.textContent = 'DARK';
+</script>
+
+</body>
+</html>
