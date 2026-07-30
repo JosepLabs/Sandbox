@@ -23,6 +23,8 @@ export const STR = {
     modeCapitalDesc: "Adivina la capital del país oculto tras la bandera.",
     modeGridTitle: "Cuadrícula",
     modeGridDesc: "Cada fallo destapa un bloque nuevo de la bandera.",
+    modeTimeTitle: "Contrarreloj",
+    modeTimeDesc: "Acierta el mayor número de banderas posible en 60 segundos.",
 
     // ---- juego (comunes) ----
     placeholder: "Escribe el nombre de un país…",
@@ -36,6 +38,9 @@ export const STR = {
     lose: (name) => `Se acabaron los intentos. Era ${name}.`,
     winCapital: (capital, country) => `Correcto. ${capital} es la capital de ${country}.`,
     loseCapital: (capital, country) => `Se acabaron los intentos. Era ${capital} (${country}).`,
+    timeLeft: (s) => `${s}s`,
+    timeUp: "¡Tiempo!",
+    timeResults: (correct, wrong, total) => `Aciertos: ${correct} · Fallos: ${wrong} · Total: ${total}`,
 
     // ---- ayuda ----
     helpTitle: "Cómo jugar",
@@ -44,6 +49,7 @@ export const STR = {
     helpBodyColors: "En el modo Colores el recuadro empieza con el color de fondo. Si un país que adivinas comparte colores con el país objetivo, esos colores se revelan en el recuadro.",
     helpBodyCapital: "En el modo Capitales adivinas escribiendo capitales en vez de países. La bandera se muestra completa desde el principio.",
     helpBodyGrid: "En el modo Cuadrícula la bandera está tapada por 6 bloques. Cada intento fallido destapa un bloque aleatorio.",
+    helpBodyTime: "En el modo Contrarreloj tienes 60 segundos para adivinar el mayor número de banderas posible. Cada bandera cuenta un único intento: aciertes o falles, pasarás automáticamente a la siguiente.",
     helpBody2: "Por cada intento verás el continente del país (coincide o no) y una flecha que indica dirección y distancia hacia el país correcto.",
     helpBody3: (max) => `Tienes ${max} intentos por partida.`,
     understood: "Entendido",
@@ -55,6 +61,7 @@ export const STR = {
     themeDark: "Oscuro",
     themeLight: "Claro",
     groupLanguage: "Idioma",
+    groupContinents: "Excluir continentes:",
     groupOther: "Otros",
     reduceMotion: "Reducir animaciones",
     newGame: "Nueva partida",
@@ -85,6 +92,8 @@ export const STR = {
     modeCapitalDesc: "Guess the capital of the country hidden behind the flag.",
     modeGridTitle: "Grid",
     modeGridDesc: "Each wrong guess uncovers a new block of the flag.",
+    modeTimeTitle: "Time Attack",
+    modeTimeDesc: "Guess as many flags as you can in 60 seconds.",
 
     placeholder: "Type a country name…",
     placeholderCapital: "Type a capital city name…",
@@ -97,6 +106,9 @@ export const STR = {
     lose: (name) => `Out of tries. It was ${name}.`,
     winCapital: (capital, country) => `Correct. ${capital} is the capital of ${country}.`,
     loseCapital: (capital, country) => `Out of tries. It was ${capital} (${country}).`,
+    timeLeft: (s) => `${s}s`,
+    timeUp: "Time's up!",
+    timeResults: (correct, wrong, total) => `Correct: ${correct} · Wrong: ${wrong} · Total: ${total}`,
 
     helpTitle: "How to play",
     helpBody1: "Each game has a target country. Type a name and pick it from the list to guess.",
@@ -104,6 +116,7 @@ export const STR = {
     helpBodyColors: "In Colors mode the box starts as the background color. If a country you guess shares colors with the target, those colors get revealed in the box.",
     helpBodyCapital: "In Capitals mode you guess by typing capital cities instead of countries. The flag is shown in full from the start.",
     helpBodyGrid: "In Grid mode the flag is covered by 6 blocks. Each wrong guess uncovers a random block.",
+    helpBodyTime: "In Time Attack you have 60 seconds to guess as many flags as possible. Each flag gets a single attempt — right or wrong, you'll move straight to the next one.",
     helpBody2: "Each guess shows the country's continent (matching or not) and an arrow with the direction and distance to the correct country.",
     helpBody3: (max) => `You have ${max} attempts per game.`,
     understood: "Got it",
@@ -114,6 +127,7 @@ export const STR = {
     themeDark: "Dark",
     themeLight: "Light",
     groupLanguage: "Language",
+    groupContinents: "Exclude continents:",
     groupOther: "Other",
     reduceMotion: "Reduce animations",
     newGame: "New game",

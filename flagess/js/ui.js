@@ -11,7 +11,7 @@
 
 import { COUNTRIES, countryName, countryCapital } from "./data.js";
 import { STR } from "./i18n.js";
-import { norm, maxDistance, flagThumbUrl } from "./utils.js";
+import { norm, maxDistance, flagThumbUrl, flagUrl } from "./utils.js";
 import * as Game from "./game.js";
 
 // ---------------------------------------------------------------------
@@ -21,10 +21,12 @@ import * as Game from "./game.js";
 let lang = "es";
 let theme = "dark";
 let reduceMotion = false;
+let excludedContinents = new Set(); // continentes desactivados en Configuración (ver renderOptionRows)
 
 let els = {};
 let filtered = [];
 let hiIndex = -1;
+let timeInterval = null; // setInterval handle del temporizador de Contrarreloj
 
 const t = () => STR[lang];
 
@@ -90,6 +92,9 @@ function cacheEls() {
     themeOptions: document.getElementById("theme-options"),
     labelLanguage: document.getElementById("label-language"),
     languageOptions: document.getElementById("language-options"),
+    labelContinents: document.getElementById("label-continents"),
+    continentOptions1: document.getElementById("continent-options-1"),
+    continentOptions2: document.getElementById("continent-options-2"),
     labelOther: document.getElementById("label-other"),
     labelReduceMotion: document.getElementById("label-reduce-motion"),
     reduceMotionToggle: document.getElementById("reduce-motion-toggle"),
@@ -124,6 +129,7 @@ function showGame(modeId) {
 }
 
 function backToMenu() {
+  clearInterval(timeInterval);
   showMenu();
 }
 
@@ -136,8 +142,9 @@ function bindHeaderEvents() {
 // ---------------------------------------------------------------------
 function renderMenu() {
   els.modeGrid.innerHTML = Game.MODES.map(
-    (mode) => `
+    (mode, i) => `
       <button class="mode-card" data-mode="${mode.id}">
+        <span class="mode-card-index">${String(i + 1).padStart(2, "0")}</span>
         <span class="mode-card-title">${t()[mode.titleKey]}</span>
         <span class="mode-card-desc">${t()[mode.descKey]}</span>
       </button>`
@@ -155,7 +162,15 @@ function bindMenuEvents() {
 // ---------------------------------------------------------------------
 // Flujo de partida
 // ---------------------------------------------------------------------
+function isTimeAttackMode() {
+  return !!Game.getMode(Game.getModeId()).timeAttack;
+}
+
 function startNewGame() {
+  if (isTimeAttackMode()) {
+    startTimeAttackGame();
+    return;
+  }
   Game.newGame();
   els.guesses.innerHTML = "";
   els.banner.textContent = "";
@@ -181,7 +196,119 @@ function entityLabel(country) {
   return currentGuessType() === "capital" ? countryCapital(country, lang) : countryName(country, lang);
 }
 
+// ---------------------------------------------------------------------
+// Modo Contrarreloj: flujo propio (temporizador + una ronda por bandera),
+// gestionado aquí en vez de por el motor genérico de attemptGuess/finishUI.
+// ---------------------------------------------------------------------
+function startTimeAttackGame() {
+  clearInterval(timeInterval);
+
+  els.guesses.innerHTML = "";
+  els.banner.textContent = "";
+  els.banner.classList.remove("lost");
+  els.flagStage.classList.remove("won", "lost");
+  els.input.value = "";
+  els.input.disabled = false;
+  delete els.input.dataset.selected;
+  delete els.guessBtn.dataset.mode;
+  els.guessBtn.textContent = t().guessBtn;
+  els.guessBtn.disabled = true;
+  els.input.placeholder = t().placeholder;
+  closeDropdown();
+
+  const state = Game.startTimeAttack();
+  showTimeFlag(state.target);
+  els.attemptsPill.textContent = t().timeLeft(state.timeLeft);
+
+  timeInterval = setInterval(() => {
+    const s = Game.tickTimeAttack();
+    if (!s) return;
+    els.attemptsPill.textContent = t().timeLeft(s.timeLeft);
+    if (!s.running) {
+      clearInterval(timeInterval);
+      finishTimeAttackUI(s);
+    }
+  }, 1000);
+}
+
+/** Muestra la bandera objetivo actual sin zoom, con un simple fundido de entrada. */
+function showTimeFlag(target) {
+  els.flagImg.classList.remove("visible");
+  els.flagImg.style.transition = "none";
+  els.flagImg.style.transformOrigin = "";
+  els.flagImg.style.transform = "scale(1)";
+  els.flagImg.onload = () => {
+    void els.flagImg.offsetWidth;
+    els.flagImg.style.transition = "";
+    els.flagImg.classList.add("visible");
+  };
+  els.flagImg.src = flagUrl(target.code);
+}
+
+/** Destello breve del borde del stage (dorado/coral) según el acierto. */
+function flashFlagStage(correct) {
+  els.flagStage.classList.remove("won", "lost");
+  void els.flagStage.offsetWidth; // reinicia la transición si se repite muy seguido
+  els.flagStage.classList.add(correct ? "won" : "lost");
+  setTimeout(() => els.flagStage.classList.remove("won", "lost"), 450);
+}
+
+function attemptTimeGuess() {
+  const state = Game.getTimeState();
+  if (!state || !state.running) return;
+
+  let code = els.input.dataset.selected;
+  if (!code) {
+    const exact = findExactMatch(els.input.value);
+    if (exact) code = exact.code;
+  }
+  if (!code) return;
+
+  const guessedCountry = COUNTRIES.find((c) => c.code === code);
+  const result = Game.submitTimeGuess(guessedCountry);
+  if (!result) return;
+
+  renderTimeRoundRow(result.roundResult);
+  flashFlagStage(result.roundResult.isCorrect);
+
+  els.input.value = "";
+  delete els.input.dataset.selected;
+  els.guessBtn.disabled = true;
+  closeDropdown();
+
+  showTimeFlag(result.state.target);
+}
+
+function renderTimeRoundRow({ target, isCorrect }) {
+  const name = countryName(target, lang);
+  const row = document.createElement("div");
+  row.className = "time-row" + (isCorrect ? " correct" : " wrong");
+  row.innerHTML = `
+    <img class="gflag" src="${flagThumbUrl(target.code, 80)}" alt="${name}">
+    <div class="gtext"><div class="gname">${name}</div></div>
+    <span class="gtime-result ${isCorrect ? "ok" : "no"}">${isCorrect ? "✓" : "✗"}</span>
+  `;
+  els.guesses.prepend(row);
+}
+
+function finishTimeAttackUI(state) {
+  els.input.disabled = true;
+  els.attemptsPill.textContent = t().timeUp;
+  els.banner.textContent = t().timeResults(state.correct, state.wrong, state.total);
+  els.banner.classList.remove("lost");
+  els.flagImg.classList.remove("visible");
+
+  els.guessBtn.dataset.mode = "restart";
+  els.guessBtn.textContent = t().playAgain;
+  els.guessBtn.disabled = false;
+}
+
 function attemptGuess() {
+  if (isTimeAttackMode()) {
+    attemptTimeGuess();
+    return;
+  }
+
   const state = Game.getState();
   if (state.finished) return;
 
@@ -299,12 +426,17 @@ function selectCountry(c) {
   els.guessBtn.disabled = false;
 }
 
+/** Códigos a excluir del autocompletado: en Contrarreloj no aplica (no hay restricción de "ya adivinado"). */
+function excludedCodes() {
+  return isTimeAttackMode() ? new Set() : Game.guessedCodes();
+}
+
 // Busca un país cuyo nombre (o capital, según el modo) coincida
 // exactamente con el texto escrito, ignorando mayúsculas/acentos.
 function findExactMatch(rawValue) {
   const q = norm(rawValue);
   if (!q) return null;
-  const already = Game.guessedCodes();
+  const already = excludedCodes();
   return COUNTRIES.find((c) => !already.has(c.code) && norm(entityLabel(c)) === q) || null;
 }
 
@@ -317,7 +449,7 @@ function bindSearchEvents() {
       closeDropdown();
       return;
     }
-    const already = Game.guessedCodes();
+    const already = excludedCodes();
     filtered = COUNTRIES.filter((c) => !already.has(c.code) && norm(entityLabel(c)).includes(q));
     hiIndex = -1;
     renderDropdown();
@@ -422,6 +554,15 @@ function renderOptionRows() {
     <button class="option-btn ${lang === "en" ? "active" : ""}" data-val="en">English</button>
   `;
 
+  const continentBtn = (key) =>
+    `<button class="option-btn ${excludedContinents.has(key) ? "active" : ""}" data-val="${key}">${t().continents[key]}</button>`;
+  els.continentOptions1.innerHTML = ["namerica", "samerica", "europe"].map(continentBtn).join("");
+  els.continentOptions2.innerHTML = ["africa", "oceania", "asia"].map(continentBtn).join("");
+
+  [...els.continentOptions1.children, ...els.continentOptions2.children].forEach((b) =>
+    b.addEventListener("click", () => toggleContinent(b.dataset.val))
+  );
+
   els.themeOptions.querySelectorAll("button").forEach((b) =>
     b.addEventListener("click", () => {
       if (theme === b.dataset.val) return;
@@ -439,6 +580,24 @@ function renderOptionRows() {
       applyText();
     })
   );
+}
+
+/**
+ * Activa/desactiva la exclusión de un continente. No permite excluir los 6
+ * a la vez (no quedarían banderas para jugar): si ya hay 5 excluidos, el
+ * sexto simplemente no se puede activar.
+ */
+function toggleContinent(key) {
+  const next = new Set(excludedContinents);
+  if (next.has(key)) {
+    next.delete(key);
+  } else {
+    if (next.size >= 5) return;
+    next.add(key);
+  }
+  excludedContinents = next;
+  Game.setExcludedContinents(excludedContinents);
+  renderOptionRows();
 }
 
 // ---------------------------------------------------------------------
@@ -460,16 +619,28 @@ function applyText() {
   els.helpTitle.textContent = t().helpTitle;
   els.helpBody1.textContent = t().helpBody1;
   els.helpBodyMode.textContent = t()[mode.helpKey];
-  els.helpBody2.textContent = t().helpBody2;
-  els.helpBody3.textContent = t().helpBody3(Game.MAX_ATTEMPTS);
+  els.helpBody2.style.display = mode.timeAttack ? "none" : "";
+  els.helpBody3.style.display = mode.timeAttack ? "none" : "";
+  els.helpBody2.textContent = mode.timeAttack ? "" : t().helpBody2;
+  els.helpBody3.textContent = mode.timeAttack ? "" : t().helpBody3(Game.MAX_ATTEMPTS);
   els.helpOk.textContent = t().understood;
 
   els.settingsTitle.textContent = t().settingsTitle;
   els.labelTheme.textContent = t().groupTheme;
   els.labelLanguage.textContent = t().groupLanguage;
+  els.labelContinents.textContent = t().groupContinents;
   els.labelOther.textContent = t().groupOther;
   els.labelReduceMotion.textContent = t().reduceMotion;
   renderOptionRows();
+
+  if (mode.timeAttack) {
+    const ts = Game.getTimeState();
+    if (ts) {
+      els.attemptsPill.textContent = ts.running ? t().timeLeft(ts.timeLeft) : t().timeUp;
+      if (!ts.running) els.banner.textContent = t().timeResults(ts.correct, ts.wrong, ts.total);
+    }
+    return;
+  }
 
   if (!state.finished) {
     els.attemptsPill.textContent = t().attempt(state.guesses.length + 1, Game.MAX_ATTEMPTS);

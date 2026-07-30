@@ -18,11 +18,13 @@ import zoomMode from "./modes/zoomMode.js";
 import colorsMode from "./modes/colorsMode.js";
 import capitalMode from "./modes/capitalMode.js";
 import gridMode from "./modes/gridMode.js";
+import timeAttackMode from "./modes/timeAttackMode.js";
 
 export const MAX_ATTEMPTS = 6;
+export const TIME_ATTACK_SECONDS = 60;
 
 /** Modos disponibles, en el orden en que se muestran en el menú. */
-export const MODES = [zoomMode, colorsMode, capitalMode, gridMode];
+export const MODES = [zoomMode, colorsMode, capitalMode, gridMode, timeAttackMode];
 
 export function getMode(id) {
   return MODES.find((m) => m.id === id) || MODES[0];
@@ -37,6 +39,7 @@ let modeId = "zoom";
 let target = null;
 let guesses = [];
 let finished = false;
+let excludedContinents = new Set(); // continentes desactivados en Configuración
 
 /** Debe llamarse una vez al arrancar la app, con los elementos del stage. */
 export function init(stageEls) {
@@ -51,12 +54,30 @@ export function getModeId() {
   return modeId;
 }
 
+/**
+ * Define qué continentes quedan excluidos del sorteo de bandera objetivo,
+ * en cualquier modo de juego. `continents` es un Set/array de claves de
+ * continente (ver STR.continents en i18n.js: "europe", "namerica"...).
+ */
+export function setExcludedContinents(continents) {
+  excludedContinents = new Set(continents);
+}
+
 function ctx() {
   return { els, target, MAX_ATTEMPTS };
 }
 
+/** Países elegibles como objetivo según los continentes excluidos. */
+function eligibleCountries() {
+  const pool = COUNTRIES.filter((c) => !excludedContinents.has(c.continent));
+  // Salvaguarda: si por error se excluyeran los 6 continentes a la vez y no
+  // quedara ningún país, se ignora el filtro para no romper el juego.
+  return pool.length ? pool : COUNTRIES;
+}
+
 function pickTarget() {
-  return COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)];
+  const pool = eligibleCountries();
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 /**
@@ -129,4 +150,72 @@ export function guessedCodes() {
 
 export function getState() {
   return { modeId, target, guesses, finished, mode: getMode(modeId) };
+}
+
+// ---------------------------------------------------------------------
+// Modo Contrarreloj: estado y lógica independientes del motor de arriba,
+// porque su flujo es "una bandera, un intento, siguiente" en vez de
+// "varios intentos sobre el mismo objetivo". ui.js gestiona su propio
+// temporizador (setInterval) llamando a tickTimeAttack() cada segundo.
+// ---------------------------------------------------------------------
+let timeState = null;
+
+/** Elige un país distinto al indicado (evita repetir la misma bandera dos veces seguidas). */
+function pickTargetExcluding(excludeCode) {
+  const pool = eligibleCountries();
+  if (pool.length <= 1) return pickTarget();
+  let next;
+  do {
+    next = pickTarget();
+  } while (next.code === excludeCode);
+  return next;
+}
+
+/** Arranca una partida nueva de Contrarreloj. */
+export function startTimeAttack() {
+  const target0 = pickTarget();
+  timeState = {
+    timeLeft: TIME_ATTACK_SECONDS,
+    correct: 0,
+    wrong: 0,
+    total: 0,
+    target: target0,
+    running: true,
+  };
+  return timeState;
+}
+
+/** Descuenta un segundo. Devuelve el estado actualizado (running:false si se acabó el tiempo). */
+export function tickTimeAttack() {
+  if (!timeState || !timeState.running) return timeState;
+  timeState.timeLeft -= 1;
+  if (timeState.timeLeft <= 0) {
+    timeState.timeLeft = 0;
+    timeState.running = false;
+  }
+  return timeState;
+}
+
+/**
+ * Registra el único intento de la ronda actual (acierte o falle) y prepara
+ * la siguiente bandera. Devuelve `{ roundResult, state }` o `null` si no
+ * hay partida de Contrarreloj en curso.
+ */
+export function submitTimeGuess(entity) {
+  if (!timeState || !timeState.running || !entity) return null;
+
+  const isCorrect = entity.code === timeState.target.code;
+  const roundResult = { target: timeState.target, isCorrect };
+
+  timeState.total += 1;
+  if (isCorrect) timeState.correct += 1;
+  else timeState.wrong += 1;
+
+  timeState.target = pickTargetExcluding(timeState.target.code);
+
+  return { roundResult, state: timeState };
+}
+
+export function getTimeState() {
+  return timeState;
 }
